@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: psypro_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: psypro_user
+      POSTGRES_PASSWORD: psypro_password
+      POSTGRES_DB: psypro_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psypro_user -d psypro_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

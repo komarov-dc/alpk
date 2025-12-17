@@ -1,0 +1,87 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+.env.production
+.env.vercel.production
+.env.development
+.env.test
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+/src/generated/prisma
+
+# Logs
+logs/
+*.log
+
+# Test files
+test-*.js
+test-*.sh
+test-*.html
+quick-seed.js
+
+# Database
+prisma/dev.db
+prisma/dev.db-journal
+
+# Documentation (except main README)
+*.md
+!README.md
+docs/
+CHANGELOG*
+TODO*
+PLAN*
+STATUS*
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
+# Vercel local
+.vercel/
+
+# Docker compose with local secrets
+docker-compose.yml
+
+# Claude Code settings
+.claude/settings.local.json
+
+# SWC cache
+.swc/

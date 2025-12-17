@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id                 String              @id @default(cuid())
+  name               String
+  description        String?
+  isSystem           Boolean             @default(false) // System project (cannot be deleted)
+  templateId         String? // Template ID for reset to factory defaults
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  canvasData         Json?
+  executionLogs      ExecutionLog[]
+  globalVariables    GlobalVariable[]
+  executionInstances ExecutionInstance[]
+
+  @@map("projects")
+}
+
+model ExecutionInstance {
+  id                      String         @id @default(cuid())
+  projectId               String
+  projectName             String
+  jobId                   String?
+  sessionId               String?
+  status                  String // running, completed, failed, cancelled
+  totalNodes              Int
+  executedNodes           Int            @default(0)
+  failedNodes             Int            @default(0)
+  skippedNodes            Int            @default(0)
+  currentNodeId           String?
+  startedAt               DateTime       @default(now())
+  completedAt             DateTime?
+  duration                Int?
+  error                   String?
+  globalVariablesSnapshot Json
+  executionResults        Json? // Store intermediate results
+  project                 Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  logs                    ExecutionLog[]
+
+  @@unique([jobId]) // Prevent duplicate executions for the same job (null values are ignored)
+  @@index([projectId])
+  @@index([sessionId])
+  @@index([status])
+  @@map("execution_instances")
+}
+
+model ExecutionLog {
+  id                  String             @id @default(cuid())
+  nodeId              String
+  projectId           String
+  executionInstanceId String?
+  input               Json?
+  output              Json?
+  status              String
+  error               String?
+  duration            Int?
+  createdAt           DateTime           @default(now())
+  project             Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  executionInstance   ExecutionInstance? @relation(fields: [executionInstanceId], references: [id], onDelete: Cascade)
+
+  @@index([executionInstanceId])
+  @@index([projectId])
+  @@index([nodeId])
+  @@index([createdAt])
+  @@map("execution_logs")
+}
+
+model GlobalVariable {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  value       String
+  type        String? // Variable type: string, number, boolean, json, array
+  description String?
+  folder      String? // Folder path like "prompts/characters" or null for root
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+  @@map("global_variables")
+}
+
+model ProcessingJob {
+  id          String    @id @default(cuid())
+  sessionId   String    @unique
+  mode        String // PSYCHODIAGNOSTICS, CAREER_GUIDANCE
+  status      String // queued, processing, completed, failed
+  workerId    String? // Worker instance that claimed this job (for atomic coordination)
+  responses   Json
+  reports     Json?
+  error       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([mode])
+  @@index([status, mode])
+  @@map("processing_jobs")
+}
+
+model SystemFlag {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_flags")
+}

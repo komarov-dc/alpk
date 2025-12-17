@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Chat {
+  id        String    @id @default(cuid())
+  title     String
+  projectId String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+
+  @@index([createdAt])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  role      String
+  content   String
+  metadata  String?
+  createdAt DateTime @default(now())
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([createdAt])
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  password      String
+  lastName      String     // Фамилия (обязательно)
+  firstName     String     // Имя (обязательно)
+  middleName    String?    // Отчество (опционально)
+  phone         String     // Телефон (обязательно)
+  birthDate     DateTime   // Дата рождения (обязательно)
+  status        UserStatus @default(OTHER)
+  role          UserRole   @default(USER)
+  consultantId  String?    // Link to consultant for USER role
+  consultant    User?      @relation("UserConsultant", fields: [consultantId], references: [id], onDelete: SetNull)
+  clients       User[]     @relation("UserConsultant")
+  emailVerified DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  auditLogs     AuditLog[]
+  reports       Report[]
+  sessions      Session[]
+
+  @@index([email])
+  @@index([role])
+  @@index([consultantId])
+}
+
+model Session {
+  id                     String        @id @default(cuid())
+  userId                 String        // Кто создал/проводит сессию (обязательно)
+  respondentName         String?       // ФИО респондента (для ADMIN/CONSULTANT может отличаться от User)
+  mode                   SessionMode
+  status                 SessionStatus @default(IN_PROGRESS)
+  totalQuestions         Int           @default(5)
+  currentIndex           Int           @default(0)
+  hasFollowUpQuestions   Boolean       @default(false)
+  followUpQuestionsAsked Int           @default(0)
+  analysis               String?
+  summary                String?
+  alpakaJobId            String?       // Job ID from Alpaka Backend
+  alpakaJobStatus        String?       // queued, processing, completed, failed
+  startedAt              DateTime      @default(now())
+  completedAt            DateTime?
+  reports                Report[]
+  responses              Response[]
+  user                   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([mode])
+  @@index([startedAt])
+  @@index([userId])
+}
+
+model Response {
+  id           String   @id @default(cuid())
+  sessionId    String
+  questionId   Int
+  questionText String
+  answer       String
+  answeredAt   DateTime @default(now())
+  timeSpent    Int?
+  tokenCount   Int?
+  charCount    Int?
+  session      Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, questionId])
+  @@index([sessionId])
+}
+
+model Question {
+  id         Int         @id @default(autoincrement())
+  mode       SessionMode
+  text       String
+  orderIndex Int
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+
+  @@unique([mode, orderIndex])
+  @@index([mode, active])
+}
+
+model Report {
+  id         String           @id @default(cuid())
+  sessionId  String
+  userId     String?
+  type       ReportType
+  content    String
+  visibility ReportVisibility @default(PRIVATE)
+  createdAt  DateTime         @default(now())
+  session    Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user       User?            @relation(fields: [userId], references: [id])
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([type])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   String?
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum SessionMode {
+  PSYCHODIAGNOSTICS
+  CAREER_GUIDANCE
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum UserRole {
+  ADMIN
+  CONSULTANT
+  SUPPORT
+  USER
+}
+
+enum UserStatus {
+  STUDENT
+  EMPLOYEE
+  OTHER
+}
+
+enum ReportType {
+  FULL           // Профессиональный отчет
+  ADAPTED        // Адаптированный отчет (было SIMPLIFIED)
+  SCORE_TABLE    // Таблица баллов
+}
+
+enum ReportVisibility {
+  PUBLIC
+  PRIVATE
+  RESTRICTED
+}

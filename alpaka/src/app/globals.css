@@ -1,0 +1,444 @@
+@import "tailwindcss";
+@import "../styles/design-system.css";
+
+/* Legacy variables for backward compatibility */
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+}
+
+@theme inline {
+  /* Import design system tokens into Tailwind theme */
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+/* Base body styling */
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-mono);
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
+/* Main app container */
+#__next {
+  background: var(--color-background);
+  min-height: 100vh;
+}
+
+/* Canvas area - using design system variables */
+div.react-flow,
+.react-flow[data-testid="rf__wrapper"] {
+  background: var(--canvas-background);
+}
+
+div.react-flow__renderer,
+.react-flow .react-flow__renderer {
+  background: var(--canvas-background);
+}
+
+/* Custom utilities */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Custom scrollbar for group nodes */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.3) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(147, 51, 234, 0.3);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(147, 51, 234, 0.5);
+}
+
+/* Group node collapsed state - override React Flow inline styles */
+.group-background-node-collapsed {
+  width: fit-content !important;
+  height: fit-content !important;
+  min-width: unset !important;
+  min-height: unset !important;
+  max-width: none !important;
+}
+
+/* Code and monospace styling */
+code, pre, .font-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
+/* Improved text rendering */
+.text-rendering-optimized {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Better focus styles */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2;
+}
+
+/* Improved button typography */
+.btn-text {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Custom slider styles - OP-XY */
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+  border: 2px solid black;
+}
+
+.slider::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  border: 2px solid black;
+  box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+/* Custom select dropdown - OP-XY */
+select option {
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  font-weight: 500;
+}
+
+select:focus {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+/* Node animations */
+.node-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Animated border for executing nodes - now using Tailwind's animate-executing-glow */
+
+/* Scrollbar - Moved to design-system.css as scrollbar-custom class */
+
+/* React Flow Handle styles - Fixed positioning */
+.react-flow__handle {
+  width: 12px;
+  height: 12px;
+  background: #555;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  position: absolute;
+  /* Remove any transitions that cause shaking */
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* Input handles (left side) */
+.react-flow__handle-left,
+.react-flow__handle.react-flow__handle-left,
+.react-flow__node .react-flow__handle[data-handlepos="left"] {
+  left: -6px;
+  background: #555;
+}
+
+/* Output handles (right side) */
+.react-flow__handle-right,
+.react-flow__handle.react-flow__handle-right,
+.react-flow__node .react-flow__handle[data-handlepos="right"] {
+  right: -6px;
+  background: #3b82f6;
+}
+
+/* Handle hover state */
+.react-flow__handle:hover {
+  background: #fff;
+  border-color: #3b82f6;
+  /* No transform to avoid shaking */
+}
+
+/* Connecting state */
+.react-flow__handle-connecting,
+.react-flow__handle.react-flow__handle-connecting {
+  background: #00ff00;
+  border-color: #00ff00;
+}
+
+/* Valid connection target */
+.react-flow__handle-valid,
+.react-flow__handle.react-flow__handle-valid {
+  background: #00ff00;
+  border-color: #00ff00;
+}
+
+/* Handle pulse animation removed to prevent shaking */
+
+/* React Flow Edge animations */
+.react-flow__edge-path {
+  stroke-dasharray: 5, 5;
+  stroke-dashoffset: 0;
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  animation: data-flow 2s linear infinite;
+}
+
+.react-flow__edge.data-flowing .react-flow__edge-path {
+  stroke-dasharray: 8, 4;
+  animation: data-flow 1.5s linear infinite;
+}
+
+.react-flow__edge.data-flowing .react-flow__arrowhead {
+  animation: arrow-pulse 2s ease-in-out infinite;
+}
+
+/* React Flow MiniMap */
+.react-flow-minimap-custom {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--node-shadow);
+}
+
+.react-flow-minimap-custom .react-flow__minimap-mask {
+  fill: rgba(0, 0, 0, 0.6);
+}
+
+.react-flow-minimap-custom svg {
+  background: var(--color-gray-800);
+  border-radius: var(--radius-md);
+}
+
+/* Zoom Indicator */
+.zoom-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: var(--z-overlay);
+  pointer-events: none;
+}
+
+.zoom-indicator .zoom-bg {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--node-shadow-hover);
+}
+
+/* Cursor modes for ReactFlow - using attribute selectors for higher specificity */
+.react-flow[data-cursor="selection"],
+.react-flow.cursor-selection {
+  cursor: default;
+}
+
+.react-flow[data-cursor="selection"] .react-flow__pane,
+.react-flow.cursor-selection .react-flow__pane {
+  cursor: default;
+}
+
+.react-flow[data-cursor="grab"],
+.react-flow.cursor-grab {
+  cursor: grab;
+}
+
+.react-flow[data-cursor="grab"] .react-flow__pane,
+.react-flow.cursor-grab .react-flow__pane {
+  cursor: grab;
+}
+
+.react-flow[data-cursor="grab"] .react-flow__pane:active,
+.react-flow.cursor-grab .react-flow__pane:active {
+  cursor: grabbing;
+}
+
+/* Node cursors with proper cascading */
+.react-flow .react-flow__nodes .react-flow__node,
+.react-flow__node[data-id] {
+  cursor: pointer;
+}
+
+.react-flow .react-flow__nodes .react-flow__node:hover,
+.react-flow__node[data-id]:hover {
+  cursor: move;
+}
+
+/* Override ReactFlow default node styles with higher specificity */
+.react-flow .react-flow__nodes .react-flow__node-input,
+.react-flow .react-flow__nodes .react-flow__node-output,
+.react-flow__node[data-type="input"],
+.react-flow__node[data-type="output"] {
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  width: auto;
+  height: auto;
+  text-align: left;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* React Flow Resize Controls */
+.react-flow__resize-control {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: transparent;
+  border: 2px solid transparent;
+  z-index: 1000;
+}
+
+/* Corner resize handles */
+.react-flow__resize-control.handle.corner {
+  width: 10px;
+  height: 10px;
+}
+
+.react-flow__resize-control.handle.corner.top.left {
+  border-left-color: #60a5fa;
+  border-top-color: #60a5fa;
+  cursor: nw-resize;
+  left: -5px;
+  top: -5px;
+}
+
+.react-flow__resize-control.handle.corner.top.right {
+  border-right-color: #60a5fa;
+  border-top-color: #60a5fa;
+  cursor: ne-resize;
+  right: -5px;
+  top: -5px;
+}
+
+.react-flow__resize-control.handle.corner.bottom.left {
+  border-left-color: #60a5fa;
+  border-bottom-color: #60a5fa;
+  cursor: sw-resize;
+  left: -5px;
+  bottom: -5px;
+}
+
+.react-flow__resize-control.handle.corner.bottom.right {
+  border-right-color: #60a5fa;
+  border-bottom-color: #60a5fa;
+  cursor: se-resize;
+  right: -5px;
+  bottom: -5px;
+}
+
+/* Line resize handles */
+.react-flow__resize-control.handle.line {
+  background: transparent;
+}
+
+.react-flow__resize-control.handle.line.top {
+  top: -5px;
+  left: 10px;
+  right: 10px;
+  height: 10px;
+  cursor: n-resize;
+  border-top: 2px solid #60a5fa;
+}
+
+.react-flow__resize-control.handle.line.bottom {
+  bottom: -5px;
+  left: 10px;
+  right: 10px;
+  height: 10px;
+  cursor: s-resize;
+  border-bottom: 2px solid #60a5fa;
+}
+
+.react-flow__resize-control.handle.line.left {
+  left: -5px;
+  top: 10px;
+  bottom: 10px;
+  width: 10px;
+  cursor: w-resize;
+  border-left: 2px solid #60a5fa;
+}
+
+.react-flow__resize-control.handle.line.right {
+  right: -5px;
+  top: 10px;
+  bottom: 10px;
+  width: 10px;
+  cursor: e-resize;
+  border-right: 2px solid #60a5fa;
+}
+
+/* Show resize controls on selected nodes */
+.react-flow__node.selected .react-flow__resize-control {
+  display: block;
+}
+
+/* Hover effects for resize controls */
+.react-flow__resize-control:hover {
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.react-flow__resize-control.handle.corner:hover {
+  width: 12px;
+  height: 12px;
+}
+
+.react-flow__resize-control.handle.corner.top.left:hover {
+  left: -6px;
+  top: -6px;
+}
+
+.react-flow__resize-control.handle.corner.top.right:hover {
+  right: -6px;
+  top: -6px;
+}
+
+.react-flow__resize-control.handle.corner.bottom.left:hover {
+  left: -6px;
+  bottom: -6px;
+}
+
+.react-flow__resize-control.handle.corner.bottom.right:hover {
+  right: -6px;
+  bottom: -6px;
+}
+
+/* NodeResizer container styles */
+.react-flow__node-resizer {
+  position: absolute;
+  pointer-events: none;
+  inset: 0;
+  z-index: 1000;
+}
+
+.react-flow__node.selected .react-flow__node-resizer {
+  pointer-events: all;
+}
+
+/* Ensure resize controls are visible */
+.react-flow__resize-control.line,
+.react-flow__resize-control.handle {
+  pointer-events: all;
+  z-index: 1001;
+}
