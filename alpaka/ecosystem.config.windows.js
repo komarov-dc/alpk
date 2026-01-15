@@ -1,35 +1,14 @@
+const path = require('path');
+const cwd = __dirname;
+
 module.exports = {
   apps: [
-    {
-      name: "alpaka-server",
-      script: "node_modules/.bin/next",
-      args: "start",
-      "cwd": "C:\\Users\\132-mainframe\\Desktop\\PsyPro\\alpk\\alpaka",
-      instances: 1,
-      exec_mode: "fork",
-      autorestart: true,
-      watch: false,
-      max_memory_restart: "4G",
-      max_restarts: 15,
-      min_uptime: "5s",
-      restart_delay: 2000,
-      exp_backoff_restart_delay: 100,
-      kill_timeout: 5000,
-      listen_timeout: 10000,
-      env: {
-        NODE_ENV: "production",
-        PORT: "3000",
-      },
-      error_file: "./logs/alpaka-server-error.log",
-      out_file: "./logs/alpaka-server-out.log",
-      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-    },
     {
       name: "Психодиагностика",
       script: "workers/trigger-worker.ts",
       interpreter: "npx",
       interpreter_args: "ts-node --project workers/tsconfig.json",
-      cwd: "C:\\Projects\\alpk\\alpaka",
+      cwd: cwd,
       instances: 1,
       exec_mode: "fork",
       autorestart: true,
@@ -54,8 +33,7 @@ module.exports = {
         ALPAKA_INTERNAL_SECRET: "8aZppqg26k4/+7PETzaN1BVoabnZXFGShdoCyJTKJsc=",
         EXTERNAL_API_BASE_URL: "http://localhost:4000",
         INTERNAL_API_BASE_URL: "http://localhost:3000",
-        DATABASE_URL:
-          "postgresql://psypro_user:psypro_password@localhost:5433/psypro_db",
+        DATABASE_URL: "postgresql://psypro_user:psypro_password@localhost:5433/psypro_db",
       },
       error_file: "./logs/psychodiagnostika-error.log",
       out_file: "./logs/psychodiagnostika-out.log",
@@ -66,7 +44,7 @@ module.exports = {
       script: "workers/trigger-worker.ts",
       interpreter: "npx",
       interpreter_args: "ts-node --project workers/tsconfig.json",
-      cwd: "C:\\Projects\\alpk\\alpaka",
+      cwd: cwd,
       instances: 1,
       exec_mode: "fork",
       autorestart: true,
@@ -91,8 +69,7 @@ module.exports = {
         ALPAKA_INTERNAL_SECRET: "8aZppqg26k4/+7PETzaN1BVoabnZXFGShdoCyJTKJsc=",
         EXTERNAL_API_BASE_URL: "http://localhost:4000",
         INTERNAL_API_BASE_URL: "http://localhost:3000",
-        DATABASE_URL:
-          "postgresql://psypro_user:psypro_password@localhost:5433/psypro_db",
+        DATABASE_URL: "postgresql://psypro_user:psypro_password@localhost:5433/psypro_db",
       },
       error_file: "./logs/proforientacija-error.log",
       out_file: "./logs/proforientacija-out.log",

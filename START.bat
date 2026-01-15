@@ -35,7 +35,7 @@ timeout /t 10 /nobreak >nul
 echo [5/5] Starting Workers via PM2...
 cd /d "%~dp0alpaka"
 call npx pm2 delete all >nul 2>&1
-call npx pm2 start ecosystem.config.js
+call npx pm2 start ecosystem.config.windows.js
 
 echo.
 echo ========================================
