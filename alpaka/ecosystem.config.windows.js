@@ -1,14 +1,10 @@
-const path = require('path');
-const cwd = __dirname;
-
 module.exports = {
   apps: [
     {
       name: "Психодиагностика",
       script: "workers/trigger-worker.ts",
       interpreter: "npx",
-      interpreter_args: "ts-node --project workers/tsconfig.json",
-      cwd: cwd,
+      interpreter_args: "tsx",
       instances: 1,
       exec_mode: "fork",
       autorestart: true,
@@ -17,9 +13,7 @@ module.exports = {
       max_restarts: 15,
       min_uptime: "5s",
       restart_delay: 2000,
-      exp_backoff_restart_delay: 100,
       kill_timeout: 5700000,
-      listen_timeout: 10000,
       env: {
         NODE_ENV: "production",
         ALPAKA_STANDALONE_MODE: "true",
@@ -43,8 +37,7 @@ module.exports = {
       name: "Профориентация",
       script: "workers/trigger-worker.ts",
       interpreter: "npx",
-      interpreter_args: "ts-node --project workers/tsconfig.json",
-      cwd: cwd,
+      interpreter_args: "tsx",
       instances: 1,
       exec_mode: "fork",
       autorestart: true,
@@ -53,9 +46,7 @@ module.exports = {
       max_restarts: 15,
       min_uptime: "5s",
       restart_delay: 2000,
-      exp_backoff_restart_delay: 100,
       kill_timeout: 5700000,
-      listen_timeout: 10000,
       env: {
         NODE_ENV: "production",
         ALPAKA_STANDALONE_MODE: "true",
