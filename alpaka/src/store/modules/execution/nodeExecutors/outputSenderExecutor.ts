@@ -1,6 +1,6 @@
 /**
  * Executor for Output Sender nodes
- * Sends job results back to backend API
+ * Sends job results back to backend API or saves to files for batch jobs
  */
 
 import { Node } from '@xyflow/react';
@@ -8,6 +8,23 @@ import { NodeExecutor } from '../types';
 import { IExecutionContext } from '../executionContext';
 import { OutputSenderNodeData } from '@/types/nodeTypes';
 import { logger } from '@/utils/logger';
+
+// Dynamic import for fs/path (only available on server-side)
+// These will be loaded when running in worker context
+let fs: typeof import('fs') | null = null;
+let path: typeof import('path') | null = null;
+
+// Initialize fs/path modules (only works on server)
+async function initFsModules() {
+  if (typeof window === 'undefined' && !fs) {
+    try {
+      fs = await import('fs');
+      path = await import('path');
+    } catch (e) {
+      // Running in browser context - fs not available
+    }
+  }
+}
 
 // Retry configuration interface
 interface RetryConfig {
@@ -205,6 +222,25 @@ export class OutputSenderNodeExecutor implements NodeExecutor {
 
       logger.info(`Output Sender: Collected ${Object.keys(reports).length}/${Object.keys(reportsMapping).length} reports`);
 
+      // Check if this is a batch job (headless mode - save to files instead of HTTP)
+      const batchIdVar = globalVariables['batch_id'];
+      const batchId = typeof batchIdVar === 'string' ? batchIdVar : batchIdVar?.value;
+      const outputDirVar = globalVariables['output_dir'];
+      const outputDir = typeof outputDirVar === 'string' ? outputDirVar : outputDirVar?.value;
+
+      if (batchId && outputDir) {
+        // BATCH MODE: Save reports to files instead of HTTP
+        return this.saveReportsToFiles(node, context, {
+          batchId,
+          outputDir,
+          jobId,
+          sessionId,
+          reports,
+          startTime,
+        });
+      }
+
+      // NORMAL MODE: Send via HTTP to frontend
       // Build URL
       const url = `${baseUrl}${endpoint}/${jobId}`;
 
@@ -354,5 +390,107 @@ export class OutputSenderNodeExecutor implements NodeExecutor {
    */
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Save reports to files for batch jobs (headless mode)
+   */
+  private async saveReportsToFiles(
+    node: Node,
+    context: IExecutionContext,
+    params: {
+      batchId: string;
+      outputDir: string;
+      jobId: string;
+      sessionId: string | undefined;
+      reports: Record<string, unknown>;
+      startTime: number;
+    }
+  ): Promise<void> {
+    const { batchId, outputDir, jobId, reports, startTime } = params;
+
+    try {
+      // Initialize fs modules (server-side only)
+      await initFsModules();
+
+      if (!fs || !path) {
+        throw new Error('File system modules not available (running in browser context?)');
+      }
+
+      // Ensure output directory exists
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+
+      // Map report keys to file names
+      const fileNameMap: Record<string, string> = {
+        'Adapted Report': 'adapted.md',
+        'Professional Report': 'professional.md',
+        'Aggregate Score Profile': 'scores.md',
+      };
+
+      const savedFiles: string[] = [];
+
+      // Save each report to a file
+      for (const [reportKey, content] of Object.entries(reports)) {
+        if (!content) continue;
+
+        const fileName = fileNameMap[reportKey] || `${reportKey.toLowerCase().replace(/\s+/g, '_')}.md`;
+        const filePath = path.join(outputDir, fileName);
+
+        // Write content to file
+        const contentStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+        fs.writeFileSync(filePath, contentStr, 'utf-8');
+        savedFiles.push(fileName);
+
+        logger.info(`Output Sender (Batch): Saved "${reportKey}" to ${filePath}`);
+      }
+
+      logger.info(`Output Sender (Batch): Successfully saved ${savedFiles.length} reports to ${outputDir}`);
+
+      // Return success result
+      const result = {
+        nodeId: node.id,
+        success: true,
+        output: {
+          type: 'outputSender',
+          sent: false, // Not sent via HTTP
+          savedToFiles: true,
+          batchId: batchId,
+          jobId: jobId,
+          outputDir: outputDir,
+          savedFiles: savedFiles,
+          reportsCount: savedFiles.length,
+        },
+        duration: Date.now() - startTime
+      };
+
+      context.setExecutionResults({
+        [node.id]: result
+      });
+
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Output Sender (Batch): Failed to save reports to files', error instanceof Error ? error : new Error(String(error)));
+
+      const result = {
+        nodeId: node.id,
+        success: false,
+        error: errorMsg,
+        output: {
+          type: 'outputSender',
+          sent: false,
+          savedToFiles: false,
+          batchId: batchId,
+        },
+        duration: Date.now() - startTime
+      };
+
+      context.setExecutionResults({
+        [node.id]: result
+      });
+
+      throw error;
+    }
   }
 }

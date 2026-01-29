@@ -101,10 +101,36 @@ model ProcessingJob {
   updatedAt   DateTime  @updatedAt
   completedAt DateTime?
 
+  // Batch processing fields
+  batchId     String? // Reference to BatchUpload
+  fileName    String? // Original file name for batch jobs
+  batch       BatchUpload? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
   @@index([status])
   @@index([mode])
   @@index([status, mode])
+  @@index([batchId])
   @@map("processing_jobs")
+}
+
+model BatchUpload {
+  id            String   @id @default(cuid())
+  name          String // Batch name (auto-generated or user-provided)
+  projectId     String // Which project/pipeline to use
+  projectName   String // Project name for display
+  status        String // pending, processing, completed, failed, partial
+  totalJobs     Int
+  completedJobs Int      @default(0)
+  failedJobs    Int      @default(0)
+  outputDir     String // Output directory path
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  completedAt   DateTime?
+  jobs          ProcessingJob[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("batch_uploads")
 }
 
 model SystemFlag {

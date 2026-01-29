@@ -12,6 +12,7 @@ export default function AdminLayout({
 
   const tabs = [
     { id: 'workers', label: 'Воркеры', path: '/admin' },
+    { id: 'batch', label: 'Batch', path: '/admin/batch' },
     { id: 'settings', label: 'Настройки', path: '/admin/settings' },
     { id: 'logs', label: 'Логи', path: '/admin/logs' },
   ];

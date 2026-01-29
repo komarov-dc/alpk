@@ -325,6 +325,48 @@ async function fetchJobs(): Promise<ExternalJob[]> {
 }
 
 /**
+ * Fetch batch jobs from local database (headless mode - no frontend needed)
+ * These are jobs created via /admin/batch with batchId set
+ */
+async function fetchBatchJobs(): Promise<ExternalJob[]> {
+  try {
+    // Find queued jobs that have batchId (batch jobs)
+    const batchJobs = await prisma.processingJob.findMany({
+      where: {
+        status: "queued",
+        batchId: { not: null },
+        // Filter by mode if configured
+        ...(CONFIG.modeFilter ? { mode: CONFIG.modeFilter } : {}),
+      },
+      take: 50, // Limit to prevent memory issues
+      orderBy: { createdAt: "asc" }, // FIFO order
+    });
+
+    // Convert to ExternalJob format
+    return batchJobs.map((job) => ({
+      jobId: job.id,
+      id: job.id,
+      sessionId: job.sessionId,
+      mode: job.mode as "PSYCHODIAGNOSTICS" | "CAREER_GUIDANCE",
+      responses: job.responses as Record<string, unknown>,
+      // Mark as batch job for special handling
+      userData: {
+        isBatch: true,
+        batchId: job.batchId,
+        fileName: job.fileName,
+        outputDir: (job.responses as Record<string, unknown>)?.output_dir,
+      },
+    }));
+  } catch (error) {
+    logger.error(
+      `❌ [${new Date().toISOString()}] Error fetching batch jobs:`,
+      normalizeError(error),
+    );
+    return [];
+  }
+}
+
+/**
  * Atomic claim: Mark job as processing (using local DB for coordination)
  * This prevents multiple workers from processing the same job
  * Uses $transaction with interactive mode for atomicity
@@ -534,6 +576,23 @@ async function executePipeline(
       Object.entries(job.userData).forEach(([key, value]) => {
         globalVariables[key] = String(value);
       });
+    }
+
+    // For batch jobs, also pass batch-specific variables at top level
+    // These are needed by OutputSender to save files instead of HTTP
+    const responses = job.responses as Record<string, unknown>;
+    if (responses?.batch_id) {
+      globalVariables.batch_id = String(responses.batch_id);
+    }
+    if (responses?.output_dir) {
+      globalVariables.output_dir = String(responses.output_dir);
+    }
+    if (responses?.file_name) {
+      globalVariables.file_name = String(responses.file_name);
+    }
+    // For batch jobs, use raw_text as the main input (replaces questionnaire format)
+    if (responses?.raw_text) {
+      globalVariables.raw_text = String(responses.raw_text);
     }
 
     // Set configurable timeout for long-running pipeline execution
@@ -980,17 +1039,27 @@ async function pollForJobs() {
   stats.lastPollTime = new Date();
 
   try {
-    // Fetch jobs
-    const jobs = await fetchJobs();
+    // Fetch jobs from external API (frontend) and local database (batch jobs)
+    const [externalJobs, batchJobs] = await Promise.all([
+      fetchJobs(),
+      fetchBatchJobs(),
+    ]);
+
+    // Combine jobs (batch jobs are already filtered by mode in fetchBatchJobs)
+    const jobs = [...externalJobs, ...batchJobs];
 
     if (jobs.length === 0) {
       // No jobs - silent polling (no log spam)
       return;
     }
 
-    // Filter by mode if configured
+    // Filter external jobs by mode if configured (batch jobs already filtered)
     const filteredJobs = CONFIG.modeFilter
-      ? jobs.filter((job: ExternalJob) => job.mode === CONFIG.modeFilter)
+      ? jobs.filter((job: ExternalJob) => {
+          // Batch jobs are already filtered, external jobs need filtering
+          const isBatch = (job as ExternalJob & { userData?: { isBatch?: boolean } }).userData?.isBatch;
+          return isBatch || job.mode === CONFIG.modeFilter;
+        })
       : jobs;
 
     if (filteredJobs.length === 0) {
