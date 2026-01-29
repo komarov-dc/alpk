@@ -625,6 +625,11 @@ async function executePipeline(
     };
 
     try {
+      // For batch jobs, use the project_id from the job data (not from worker env)
+      const effectiveProjectId = responses?.project_id
+        ? String(responses.project_id)
+        : CONFIG.projectId;
+
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -632,7 +637,7 @@ async function executePipeline(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          projectId: CONFIG.projectId,
+          projectId: effectiveProjectId,
           globalVariables,
           clearResults: true, // Always execute from scratch to generate fresh reports
         }),

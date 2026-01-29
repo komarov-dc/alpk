@@ -9,6 +9,23 @@ interface Project {
   description: string | null;
 }
 
+interface JobProgress {
+  totalNodes: number;
+  executedNodes: number;
+  failedNodes: number;
+  percentage: number;
+}
+
+interface BatchJob {
+  id: string;
+  sessionId: string;
+  fileName: string | null;
+  status: string;
+  workerId: string | null;
+  error: string | null;
+  progress: JobProgress | null;
+}
+
 interface BatchUpload {
   id: string;
   name: string;
@@ -21,6 +38,7 @@ interface BatchUpload {
   outputDir: string;
   createdAt: string;
   completedAt: string | null;
+  jobs: BatchJob[];
 }
 
 interface FilePreview {
@@ -38,6 +56,7 @@ export default function BatchUploadPage() {
   const [uploading, setUploading] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedBatch, setExpandedBatch] = useState<string | null>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -400,80 +419,129 @@ export default function BatchUploadPage() {
             Нет batch-загрузок
           </div>
         ) : (
-          <div className="surface-base border-default rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-800/50">
-                <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">
-                    Название
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">
-                    Проект
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">
-                    Прогресс
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">
-                    Статус
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">
-                    Дата
-                  </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">
-                    Папка
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {batches.map((batch) => {
-                  const progress = batch.totalJobs > 0
-                    ? Math.round(((batch.completedJobs + batch.failedJobs) / batch.totalJobs) * 100)
-                    : 0;
+          <div className="space-y-3">
+            {batches.map((batch) => {
+              const progress = batch.totalJobs > 0
+                ? Math.round(((batch.completedJobs + batch.failedJobs) / batch.totalJobs) * 100)
+                : 0;
+              const isExpanded = expandedBatch === batch.id;
 
-                  return (
-                    <tr key={batch.id} className="hover:bg-gray-800/30">
-                      <td className="px-4 py-3 text-sm font-mono text-gray-300">
-                        {batch.name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-400">
-                        {batch.projectName}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <div className="flex items-center gap-2">
-                          <div className="w-20 h-2 bg-gray-700 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full transition-all duration-300 ${
-                                batch.failedJobs > 0 ? 'bg-yellow-500' : 'bg-green-500'
-                              }`}
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <span className="text-gray-400 text-xs">
-                            {batch.completedJobs}/{batch.totalJobs}
-                            {batch.failedJobs > 0 && (
-                              <span className="text-red-400 ml-1">
-                                ({batch.failedJobs} err)
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className={`px-2 py-1 rounded text-xs ${getStatusColor(batch.status)}`}>
+              return (
+                <div key={batch.id} className="surface-base border-default rounded-lg overflow-hidden">
+                  {/* Batch header - clickable */}
+                  <div
+                    className="px-4 py-3 flex items-center gap-4 cursor-pointer hover:bg-gray-800/30"
+                    onClick={() => setExpandedBatch(isExpanded ? null : batch.id)}
+                  >
+                    <span className="text-gray-500 text-xs">
+                      {isExpanded ? '▼' : '▶'}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-mono text-gray-300 truncate">
+                          {batch.name}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-xs ${getStatusColor(batch.status)}`}>
                           {batch.status}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-400">
-                        {formatDate(batch.createdAt)}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-mono text-gray-500 text-xs">
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {batch.projectName} · {formatDate(batch.createdAt)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-300 ${
+                              batch.failedJobs > 0 ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <span className="text-gray-400 text-xs whitespace-nowrap">
+                          {batch.completedJobs}/{batch.totalJobs}
+                          {batch.failedJobs > 0 && (
+                            <span className="text-red-400 ml-1">
+                              ({batch.failedJobs} err)
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <span className="text-xs font-mono text-gray-600 hidden md:inline">
                         {batch.outputDir.split('/').pop()}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Expanded: per-job details */}
+                  {isExpanded && batch.jobs && (
+                    <div className="border-t border-gray-700">
+                      <table className="w-full">
+                        <thead className="bg-gray-800/50">
+                          <tr>
+                            <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Файл</th>
+                            <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Статус</th>
+                            <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Прогресс по нодам</th>
+                            <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Воркер</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800">
+                          {batch.jobs.map((job) => (
+                            <tr key={job.id} className="hover:bg-gray-800/20">
+                              <td className="px-4 py-2 text-sm text-gray-300">
+                                {job.fileName || job.sessionId}
+                              </td>
+                              <td className="px-4 py-2 text-sm">
+                                <span className={`px-2 py-0.5 rounded text-xs ${getStatusColor(job.status)}`}>
+                                  {job.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-sm">
+                                {job.progress ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-green-500 transition-all duration-300"
+                                        style={{ width: `${job.progress.percentage}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-gray-400 text-xs font-mono">
+                                      {job.progress.executedNodes}/{job.progress.totalNodes}
+                                    </span>
+                                    <span className="text-gray-500 text-xs">
+                                      ({job.progress.percentage}%)
+                                    </span>
+                                    {job.progress.failedNodes > 0 && (
+                                      <span className="text-red-400 text-xs">
+                                        {job.progress.failedNodes} err
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : job.status === 'queued' ? (
+                                  <span className="text-gray-500 text-xs">В очереди</span>
+                                ) : job.status === 'completed' ? (
+                                  <span className="text-green-500 text-xs">Готово</span>
+                                ) : job.status === 'failed' ? (
+                                  <span className="text-red-400 text-xs" title={job.error || ''}>
+                                    Ошибка{job.error ? `: ${job.error.slice(0, 50)}` : ''}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-500 text-xs">Запуск...</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-2 text-xs text-gray-500 font-mono">
+                                {job.workerId || '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

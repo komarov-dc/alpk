@@ -202,7 +202,7 @@ export async function executeFlowStandalone(
 
     // CRITICAL: Create NEW instance for each job to prevent cross-job contamination
     // DO NOT use singleton when running parallel jobs!
-    const queueManager = new ExecutionQueueManager(3);
+    const queueManager = new ExecutionQueueManager(1);
 
     logger.info(
       `🧹 [Standalone] Created NEW QueueManager instance for job ${jobId}`,

@@ -266,11 +266,66 @@ export async function GET(req: NextRequest) {
           });
         }
 
+        // Fetch per-job details with execution progress
+        const batchJobs = await prisma.processingJob.findMany({
+          where: { batchId: batch.id },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            sessionId: true,
+            fileName: true,
+            status: true,
+            workerId: true,
+            createdAt: true,
+            updatedAt: true,
+            error: true,
+          },
+        });
+
+        // Fetch execution instances for these jobs
+        const jobIds = batchJobs.map((j) => j.id);
+        const executions = await prisma.executionInstance.findMany({
+          where: { jobId: { in: jobIds } },
+          select: {
+            jobId: true,
+            totalNodes: true,
+            executedNodes: true,
+            failedNodes: true,
+            currentNodeId: true,
+            startedAt: true,
+            status: true,
+          },
+          orderBy: { startedAt: "desc" },
+        });
+
+        const executionMap = new Map(executions.map((e) => [e.jobId, e]));
+
+        const enrichedJobs = batchJobs.map((job) => {
+          const execution = executionMap.get(job.id);
+          return {
+            ...job,
+            progress: execution
+              ? {
+                  totalNodes: execution.totalNodes,
+                  executedNodes: execution.executedNodes,
+                  failedNodes: execution.failedNodes,
+                  percentage:
+                    execution.totalNodes > 0
+                      ? Math.round(
+                          (execution.executedNodes / execution.totalNodes) * 100,
+                        )
+                      : 0,
+                }
+              : null,
+          };
+        });
+
         return {
           ...batch,
           status,
           completedJobs,
           failedJobs,
+          jobs: enrichedJobs,
         };
       })
     );
