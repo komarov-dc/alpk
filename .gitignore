@@ -29,6 +29,10 @@ Thumbs.db
 # Claude
 .claude/
 
+# Batch output
+batch_output/
+output/
+
 # Docker volumes
 postgres_data/
 nul

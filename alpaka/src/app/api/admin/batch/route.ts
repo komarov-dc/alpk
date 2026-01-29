@@ -53,7 +53,7 @@ function generateBatchId(): string {
  * Create output directory for batch results
  */
 function createOutputDir(batchId: string): string {
-  const outputBase = path.join(process.cwd(), "output");
+  const outputBase = path.join(process.cwd(), "..", "batch_output");
   const batchDir = path.join(outputBase, batchId);
 
   // Create directories if they don't exist

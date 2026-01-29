@@ -353,7 +353,7 @@ export default function BatchUploadPage() {
             <div className="mt-4 p-4 bg-gray-800/30 rounded border border-dashed border-gray-600">
               <div className="text-sm text-gray-400 mb-2">После обработки:</div>
               <div className="font-mono text-sm text-green-400">
-                <div>output/batch_[timestamp]/</div>
+                <div>batch_output/batch_[timestamp]/</div>
                 {files.slice(0, 3).map((file, idx) => {
                   const baseName = file.name.replace(/\.(docx|md|txt)$/i, '');
                   return (
@@ -477,6 +477,23 @@ export default function BatchUploadPage() {
                   {/* Expanded: per-job details */}
                   {isExpanded && batch.jobs && (
                     <div className="border-t border-gray-700">
+                      {/* Output folder path */}
+                      <div className="px-4 py-2 bg-gray-800/30 border-b border-gray-700 flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Папка:</span>
+                        <code
+                          className="text-xs text-blue-400 hover:text-blue-300 cursor-pointer hover:underline"
+                          title={batch.outputDir}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(batch.outputDir);
+                            const el = e.currentTarget;
+                            el.textContent = 'Скопировано!';
+                            setTimeout(() => { el.textContent = batch.outputDir; }, 1500);
+                          }}
+                        >
+                          {batch.outputDir}
+                        </code>
+                      </div>
                       <table className="w-full">
                         <thead className="bg-gray-800/50">
                           <tr>
